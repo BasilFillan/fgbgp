@@ -3,9 +3,10 @@ package fgbgp
 import (
 	"errors"
 	"fmt"
-	"github.com/cloudflare/fgbgp/messages"
-	log "github.com/sirupsen/logrus"
 	"sync/atomic"
+
+	"github.com/BasilFillan/fgbgp/messages"
+	log "github.com/sirupsen/logrus"
 )
 
 type BGPUpdateHandler interface {
@@ -23,18 +24,12 @@ type DefaultBGPUpdateHandler struct {
 
 	UpdateMsgCount uint64
 
-	RibPerNeighbor map[int]interface{}
-
 	UpdateEventHandler BGPUpdateEventHandler
 }
 
 type DefaultMessageUpdate struct {
 	Msg      []byte
 	Neighbor *Neighbor
-}
-
-func (n *Neighbor) UpdateRib(m *messages.BGPMessageUpdate) {
-	n.Rib.UpdateRib(m)
 }
 
 func (uh *DefaultBGPUpdateHandler) ProcessUpdate(msg []byte, n *Neighbor) {
@@ -60,13 +55,8 @@ func (uh *DefaultBGPUpdateHandler) Process(id int, msg interface{}) error {
 		return errors.New(fmt.Sprintf("Null update: %v", err))
 	}
 
-	add := true
 	if uh.UpdateEventHandler != nil {
-		add = uh.UpdateEventHandler.ProcessUpdateEvent(v, msgt.Neighbor)
-	}
-
-	if add {
-		msgt.Neighbor.UpdateRib(v)
+		uh.UpdateEventHandler.ProcessUpdateEvent(v, msgt.Neighbor)
 	}
 
 	if err != nil {
